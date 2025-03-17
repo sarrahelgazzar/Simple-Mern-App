@@ -18,7 +18,7 @@ const Login = () => {
     setLoading(true); // Show loading state
 
     try {
-      const response = await fetch("http://localhost:1337/api/login", {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -26,11 +26,12 @@ const Login = () => {
 
       const data = await response.json();
 
-      if (data.status === "ok") {
+      if (response.ok) { 
         localStorage.setItem("token", data.token);
+        alert("Login successful!");
         navigate("/dashboard");
       } else {
-        alert("Wrong Email or Password");
+        alert(data.message || "Wrong Email or Password");
       }
     } catch (error) {
       console.error("Login error:", error);

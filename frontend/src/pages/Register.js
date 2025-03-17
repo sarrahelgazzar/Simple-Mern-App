@@ -5,38 +5,48 @@ const Register = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading ]=useState(false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleRegister = async (e) => {
-    //prevents the page from refreshing 
     e.preventDefault();
 
-    if(!name||!email|| !password){
+    if (!name || !email || !password) {
       alert("Please fill in all fields");
       return;
     }
+
     setLoading(true); // Show loading state
 
-    const req = await fetch("http://localhost:1337/api/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: await JSON.stringify({
-        name,
-        email,
-        password,
-      }),
-    });
+    try {
+      const req = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
 
-    const data = await req.json();
+      const data = await req.json();
 
-    if (data.status == "ok") {
-      navigate("/login");
-    } else {
-      alert("Duplicate Email");
+      if (data.message === "User registered successfully") {
+        
+        await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/send-data`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, email }),
+        });
+
+        navigate("/login");
+      } else {
+        alert(data.message || "Registration failed");
+      }
+    } catch (error) {
+      console.error("Error during registration:", error);
+      alert("Something went wrong. Please try again.");
     }
-    setLoading(false); // Hide loading state
+
+    setLoading(false);
   };
+
   return (
     <div style={styles.container}>
       <h1 style={styles.title}>Register</h1>
@@ -50,7 +60,7 @@ const Register = () => {
         />
         <br />
         <input
-         style={styles.input}
+          style={styles.input}
           placeholder="Email"
           type="email"
           value={email}
@@ -58,20 +68,30 @@ const Register = () => {
         />
         <br />
         <input
-         style={styles.input}
+          style={styles.input}
           placeholder="Password"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
         <br />
-        <button style={styles.button} type="submit" disabled={loading}>
-          {loading ? "Registering..." : "Register"}
-        </button>
+        <div style={styles.buttonContainer}>
+          <button style={styles.button} type="submit" disabled={loading}>
+            {loading ? "Registering..." : "Register"}
+          </button>
+          <button
+            style={{ ...styles.button, backgroundColor: "#28a745" }}
+            type="button"
+            onClick={() => navigate("/login")}
+          >
+            Login
+          </button>
+        </div>
       </form>
     </div>
   );
 };
+
 // Styling
 const styles = {
   container: {
@@ -108,6 +128,10 @@ const styles = {
     fontSize: "16px",
     cursor: "pointer",
     transition: "background 0.3s",
+  },
+  buttonContainer: {
+    display: "flex",
+    justifyContent: "space-between",
   },
 };
 
